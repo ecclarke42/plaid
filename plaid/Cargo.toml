@@ -1,0 +1,33 @@
+[package]
+name = "plaid"
+version = "0.1.0"
+authors = ["Elliott Clarke <elliott.clarke.ext@siemens.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+# Note, if adding new default features, be sure to include them in CI, which
+# DOESN'T test all features
+default = ["tracing", "tracing-futures", "network-tests"]
+network-tests = []
+
+[dependencies]
+plaid-macros = { path = "../plaid-macros" }
+
+async-trait = "*"
+base64 = "*"
+hyper = { version = "0.14", features= ["tcp", "http1", "http2", "server"]}
+md5 = "*"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_path_to_error = "0.1"
+serde_urlencoded = "*" # serde_qs?
+tokio = { version = "1.0", features = ["full"] }
+uuid = {version = "*", features = ["v4", "serde"]}
+
+tracing = {version = "*", optional = true }
+tracing-futures = {version = "*", optional = true}
+
+[dev-dependencies]
+reqwest = "0.11"

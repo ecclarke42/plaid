@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "plaid",
+    "plaid-macros",
+    "plaid-cors-middleware",
+    "plaid-request-id-middleware",
+]

@@ -1,0 +1,24 @@
+[package]
+name = "plaid-request-id-middleware"
+version = "0.1.0"
+authors = ["Elliott Clarke <elliott.clarke.ext@siemens.com>"]
+edition = "2018"
+
+[features]
+default = ["tracing", "tracing-futures"]
+
+[dependencies]
+plaid = {path = "../plaid"}
+
+async-trait = "*"
+hyper = { version = "0.14", features= ["tcp", "http1", "http2"]}
+# tokio = { version = "1.0", features = ["full"] }
+
+base64 = "*"
+uuid = {version = "*", features = ["v4", "serde"]}
+
+tracing = {version = "*", optional = true }
+tracing-futures = {version = "*", optional = true}
+
+# [dev-dependencies]
+# reqwest = "0.11"
