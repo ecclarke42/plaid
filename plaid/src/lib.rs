@@ -5,7 +5,7 @@
 extern crate async_trait;
 
 // TODO: convert tests to use this macro
-pub use plaid_macros::handler;
+pub use plaid_macros::*;
 
 pub mod context;
 mod handlers;

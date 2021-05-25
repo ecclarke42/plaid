@@ -88,3 +88,90 @@ pub fn handler(
 
     output.into()
 }
+
+mod route_definition;
+
+/// # Plaid Route Definition
+///
+/// Simultaneously generate both a router and implement methods on a client
+/// that connect to each endpoint.
+///
+/// Format:
+/// ```rust
+///
+/// plaid::route_definition! {
+///     {
+///         ClientStruct { request_client_field } -> ClientError;
+///         router_fn() -> RouterType;
+///     } [
+///         client_fn1(client_args) => handler1 => result {
+///             METHOD "path" parts "here"
+///         }
+///
+///         client_fn2(client_args) => handler2 => result {
+///             METHOD "path" parts "here"
+///         }
+///
+///         ...
+///     ]
+/// }
+///
+/// ```
+///
+/// The definition consists of two sections. First, the targets of the macro,
+/// where:
+///     - `ClientStruct` is the ident of the struct you want to implement
+/// endpoint methods on
+///     - `request_client_field` is the field on `ClientStruct` that holds an
+/// http client (reqwest::Client by default)
+///     - `ClientError` is the error type returned by the endpoint methods
+///     - `router_fn -> RouterType` is the signature of the function generated
+/// to create a new router for the given endpoints
+///
+/// Next, a list of endpoints is defined, where:
+///     - `client_fn` is the name of the client method for the given endpoint
+///     - `client_args` is a list of comma seperated request properties
+/// (defined below), which are also mapped to function arguments for the client
+/// method
+///     - `handler` is the ident of a plaid::Handler that will be instantiated
+/// for the router
+///     - `result` is the Ok variant of the return type of the endpoint, wrapped
+/// with it's MIME type (defined further below)
+///     - `METHOD` is one of `GET`, `PUT`, `PATCH`, `POST`, or `DELETE`
+///     - path parts are either a string literal (for a constant route
+/// component) or a parameter and type, like `param_name{type}` (much like the
+/// router path input definition), where the type is a supported router
+/// `plaid::routes::tree::Parameter` (`i32`, `u32`, or `String`, which will be
+/// used as `&str` as an input on the client method). For extensibility, you may
+/// specify two types as `param_name{client_type|router_type}` to use another
+/// type of compatible serialization with a router type, which must be one of
+/// the previously defined types.
+///
+/// TODO: extensibility of route newtypes for router to get rid of {client_type|router_type}
+///
+/// ## Request/Client Args
+/// TODO: reference `route_definition::FieldSet`
+///
+/// The client method maps arguments to the http header/body through fields
+/// defined in the `client_args` section as `field: type` with the following
+/// options (`MIME`s are defined in the following section):
+///     - `body: MIME<Type>`: Set the request body with mime type for
+/// serialization. `Type` must implement `serde`'s `Serialize` and `Deserialize`
+///
+/// TODO: complete
+///
+/// ## Request/Result MIME
+///
+/// Requests and results must be wrapped in a MIME type, which controls
+/// (de)serialization. They can be one of:
+///     - `Json<T>`: "application/json", serialized with `serde_json`
+///     //- `Bytes<T>`: "application/octet-stream", serialized
+///     - `Bytes`: "application/octet-stream", accepted as &[u8] and returned
+/// as Vec<u8>
+///
+/// TODO: complete
+///
+#[proc_macro]
+pub fn route_definition(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    route_definition::transform_stream(input)
+}
