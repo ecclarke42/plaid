@@ -187,46 +187,9 @@ impl Route {
 
         let method = syn::Ident::new(&method.to_string().to_lowercase(), method.span());
 
+        // Args order should be (path params, body, query, token)
         let mut args = Vec::new();
         let mut request_methods = Vec::new();
-        if let Some((ident, mime)) = &client_args.body {
-            match mime {
-                Mime::Json(inner) => {
-                    request_methods.push(quote! { request = request.json(#ident); });
-                    args.push(quote! {
-                        #ident: &#inner
-                    });
-                }
-                Mime::Bytes => {
-                    request_methods.push(quote! { request = request.body(#ident); });
-                    let ty = syn::Type::Verbatim(quote! { [u8] });
-                    args.push(quote! {
-                        #ident: &#ty
-                    });
-                }
-                Mime::Empty => {}
-            }
-        }
-        if let Some((ident, ty)) = &client_args.auth {
-            let ty = match ty {
-                AuthType::Bearer(ty) => {
-                    request_methods.push(quote! { request = request.bearer_auth(#ident); });
-                    ty.clone()
-                }
-
-                AuthType::MaybeBearer(ty) => {
-                    request_methods.push(quote! {
-                        if let Some(token) = #ident {
-                            request = request.bearer_auth(token);
-                        }
-                    });
-                    syn::Type::Verbatim(quote! { Option<#ty> })
-                }
-            };
-            args.push(quote! {
-                #ident: #ty
-            })
-        }
 
         let mut format_str = Vec::new();
         let mut format_args = Vec::new();
@@ -251,6 +214,26 @@ impl Route {
             let path = format!(#format_str #(, #format_args)*);
             let mut url = reqwest::Url::parse(&path)?;
         };
+
+        if let Some((ident, mime)) = &client_args.body {
+            match mime {
+                Mime::Json(inner) => {
+                    request_methods.push(quote! { request = request.json(#ident); });
+                    args.push(quote! {
+                        #ident: &#inner
+                    });
+                }
+                Mime::Bytes => {
+                    request_methods.push(quote! { request = request.body(#ident); });
+                    let ty = syn::Type::Verbatim(quote! { [u8] });
+                    args.push(quote! {
+                        #ident: &#ty
+                    });
+                }
+                Mime::Empty => {}
+            }
+        }
+
         let query_def = if let Some((ident, ty)) = &client_args.query {
             args.push(quote! { #ident: #ty });
             quote! {
@@ -260,6 +243,27 @@ impl Route {
         } else {
             quote! {}
         };
+
+        if let Some((ident, ty)) = &client_args.auth {
+            let ty = match ty {
+                AuthType::Bearer(ty) => {
+                    request_methods.push(quote! { request = request.bearer_auth(#ident); });
+                    ty.clone()
+                }
+
+                AuthType::MaybeBearer(ty) => {
+                    request_methods.push(quote! {
+                        if let Some(token) = #ident {
+                            request = request.bearer_auth(token);
+                        }
+                    });
+                    syn::Type::Verbatim(quote! { Option<#ty> })
+                }
+            };
+            args.push(quote! {
+                #ident: #ty
+            })
+        }
 
         let (handle, result) = match result {
             Mime::Json(ty) => (quote! { handle_json_response }, quote! { #ty }),
