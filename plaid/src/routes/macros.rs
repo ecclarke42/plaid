@@ -110,9 +110,9 @@ mod tests {
 
     enum BasicError {}
 
-    #[crate::handler(name = "Echo", instrument)]
+    #[crate::handler(name = "Echo")]
     async fn echo(
-        _: &mut RequestContext<(), ()>,
+        _ctx: &mut RequestContext<(), ()>,
         params: crate::RouteParameters,
     ) -> Result<Response, BasicError> {
         println!("{:#?}", params);

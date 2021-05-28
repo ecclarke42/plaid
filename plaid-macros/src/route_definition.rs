@@ -2,9 +2,11 @@ use quote::quote;
 
 pub fn transform_stream(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let Input {
+        client_block_attrs,
         client_struct,
         client_field,
         client_error,
+        router_fn_attrs,
         router_fn,
         router_ty,
         routes,
@@ -15,14 +17,32 @@ pub fn transform_stream(input: proc_macro::TokenStream) -> proc_macro::TokenStre
         .map(|r| r.prepare(client_field.clone(), client_error.clone()))
         .unzip();
 
+    let client_block_attrs = if let Some(attrs) = client_block_attrs {
+        quote! {
+            #(#attrs)*
+        }
+    } else {
+        quote! {}
+    };
+
+    let router_fn_attrs = if let Some(attrs) = router_fn_attrs {
+        quote! {
+            #(#attrs)*
+        }
+    } else {
+        quote! {}
+    };
+
     let stream = quote! {
 
+        #client_block_attrs
         impl #client_struct {
             #(
                 #client_defs
             )*
         }
 
+        #router_fn_attrs
         pub fn #router_fn() -> #router_ty {
             let mut router = <#router_ty>::new();
             #(
@@ -38,10 +58,12 @@ pub fn transform_stream(input: proc_macro::TokenStream) -> proc_macro::TokenStre
 
 #[derive(Debug)]
 struct Input {
+    client_block_attrs: Option<Vec<syn::Attribute>>,
     client_struct: syn::Path,
     client_field: syn::Ident,
     client_error: syn::Path,
 
+    router_fn_attrs: Option<Vec<syn::Attribute>>,
     router_fn: syn::Ident,
     router_ty: syn::Type,
 
@@ -55,6 +77,11 @@ impl syn::parse::Parse for Input {
         syn::braced!(content in input);
         syn::bracketed!(route_defs in input);
 
+        let client_block_attrs = if content.peek(syn::Token![#]) {
+            Some(content.call(syn::Attribute::parse_outer)?)
+        } else {
+            None
+        };
         let client_struct = content.parse()?;
         let client_fields;
         syn::braced!(client_fields in content);
@@ -63,6 +90,11 @@ impl syn::parse::Parse for Input {
         let client_error = content.parse()?;
         content.parse::<syn::Token![;]>()?;
 
+        let router_fn_attrs = if content.peek(syn::Token![#]) {
+            Some(content.call(syn::Attribute::parse_outer)?)
+        } else {
+            None
+        };
         let router_fn = content.parse()?;
         let _empty;
         syn::parenthesized!(_empty in content);
@@ -76,9 +108,11 @@ impl syn::parse::Parse for Input {
         }
 
         Ok(Input {
+            client_block_attrs,
             client_struct,
             client_field,
             client_error,
+            router_fn_attrs,
             router_fn,
             router_ty,
             routes,
@@ -191,28 +225,27 @@ impl Route {
         let mut args = Vec::new();
         let mut request_methods = Vec::new();
 
-        let mut format_str = Vec::new();
-        let mut format_args = Vec::new();
-        format_str.push(String::from("{}"));
-        format_args.push(quote! { self.root }); // TODO: macro input
+        let mut path_segments = Vec::new();
         for part in path_parts {
             match part {
                 PathPart::Literal(lit) => {
-                    format_str.push(lit.value());
+                    path_segments.push(quote! { .push(#lit) });
                 }
                 PathPart::Param {
                     ident, client_ty, ..
                 } => {
                     args.push(quote! { #ident: #client_ty });
-                    format_str.push(String::from("{}"));
-                    format_args.push(quote! { #ident });
+                    path_segments.push(quote! { .push(&format!("{}", #ident)) });
                 }
             }
         }
-        let format_str = format_str.join("/");
+
         let url_def = quote! {
-            let path = format!(#format_str #(, #format_args)*);
-            let mut url = reqwest::Url::parse(&path)?;
+            let mut url = self.root.clone();
+            url
+                .path_segments_mut()
+                .map_err(|_| crate::client::Error::CannotBeBase)?
+                #(#path_segments)*;
         };
 
         if let Some((ident, mime)) = &client_args.body {

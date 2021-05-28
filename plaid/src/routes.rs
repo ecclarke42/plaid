@@ -288,7 +288,7 @@ mod tests {
             let ctx = &mut ctx;
             match h.handle(ctx, p).await {
                 Ok(resp) => assert_eq!(resp.status(), Status::from_u16(expect_status).unwrap()),
-                Err(e) => panic!(e),
+                Err(e) => panic!("{:?}", e),
             }
         } else {
             panic!("failed to route to /")

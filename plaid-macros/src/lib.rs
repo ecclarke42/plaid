@@ -101,7 +101,10 @@ mod route_definition;
 ///
 /// plaid::route_definition! {
 ///     {
+///         #[attrs...]
 ///         ClientStruct { request_client_field } -> ClientError;
+///
+///         #[attrs...]
 ///         router_fn() -> RouterType;
 ///     } [
 ///         client_fn1(client_args) => handler1 => result {
@@ -125,6 +128,9 @@ mod route_definition;
 ///     - `request_client_field` is the field on `ClientStruct` that holds an
 /// http client (reqwest::Client by default)
 ///     - `ClientError` is the error type returned by the endpoint methods
+///     - `#[attr...]` can be any attribute that needs to be passed through to
+/// the client impl block or router function (for example, when the server
+/// should not be built for a specific target, like wasm).
 ///     - `router_fn -> RouterType` is the signature of the function generated
 /// to create a new router for the given endpoints
 ///

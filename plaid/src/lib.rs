@@ -4,8 +4,11 @@
 #[macro_use]
 extern crate async_trait;
 
-// TODO: convert tests to use this macro
+// TODO: convert tests to use handler macro
+// Macros to re-export
+pub use async_trait::async_trait;
 pub use plaid_macros::*;
+// pub use tokio::main;
 
 pub mod context;
 mod handlers;
