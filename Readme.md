@@ -2,6 +2,11 @@
 
 [![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 
+## Archived
+
+Use [Axum](https://github.com/tokio-rs/axum) instead! It does just about everything I set out to do with this (especially with the next release, which should include a radix-tree based router), except maybe the client-generation (which is a bit brittle anyway).
+
+
 <!-- ![logo](./plaid/plaid2.jpg) -->
 <div style="height:10em;width:100%;background-image:url(./plaid2.jpg);background-position: center;" />
 <br/><br/><br/><br/></br></br></br>
